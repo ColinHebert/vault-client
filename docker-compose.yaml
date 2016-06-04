@@ -1,0 +1,27 @@
+version: '2'
+
+services:
+  vault:
+    image: voxxit/vault
+    ports:
+      - '8200'
+    volumes:
+      - ./vault:/vault
+    working_dir: /vault
+    command: server -config=/vault/config.hcl
+  vault-unseal:
+    image: voxxit/vault
+    depends_on:
+      - vault
+    environment:
+      - VAULT_ADDR=http://vault:8200
+    command: unseal e92a62b5a5e2956006365f9561ec0d4ca9a4b157b281a80a56215f1817b14faa
+  vault-client:
+    build: .
+    image: vault-client
+    depends_on:
+      - vault-unseal
+    environment:
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=afdcd952-5b14-540a-dc85-ed996e300716
+    command: go-wrapper run -read secret/password -field value
